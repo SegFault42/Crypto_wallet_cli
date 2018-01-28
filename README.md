@@ -1,4 +1,4 @@
-# Crypto_wallet_cli#
+# Crypto_wallet_cli
 
 Monitor your crypto currencies from terminal. (Using Bittrex API)
 
