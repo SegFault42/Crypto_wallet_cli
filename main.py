@@ -6,10 +6,14 @@ import json
 import types
 import os
 import time
+import sys
+
+reload(sys)
+sys.setdefaultencoding('utf8')
+
 
 bittrex_api_version = API_V1_1
-header = ["Coin Name", "Last", "Coin Owned", "Buyed price", "Net Worth", "24h High", "24h Low"]
-#table_content = [["", 0.0, 0.0, 0.0, 0.0, 0.0]]
+header = ["Coin Name", "Last", "Coin Owned", "Buyed price", "Net Worth (BTC)", "Net Worth (USDT)", "24h High", "24h Low"]
 
 def auth_bittrex():
     dataBittrex = json.load(open('key.json'))
@@ -23,27 +27,25 @@ def getCoinInfo(bittrexApi, coin):
 def parseWallet_json(bittrexApi):
     table_content = []
     dataWallet = json.load(open('wallet.json'))
-    #print json.dumps(dataWallet, indent=2)
     for key, value in dataWallet.iteritems():
         if isinstance(value[0], types.FloatType):
             coinInfo = getCoinInfo(bittrexApi, key)
-            netWorth = coinInfo["result"][0]["Last"] - value[1]
-            table_content.append([key, coinInfo["result"][0]["Last"], value[0], value[1], netWorth * value[0], coinInfo["result"][0]["High"], coinInfo["result"][0]["Low"]])
-            #table_content[0][0] = key
-            #table_content[0][2] = value[0]
-            #table_content[0][3] = value[1]
-            ##print "%.8f" % (dataWallet[i][0])
-            ##print "%.8f" % (dataWallet[i][1])
-            #print dataWallet
+            btcPrice = bittrexApi.get_marketsummary("USDT-BTC")["result"][0]["Last"]
+            netWorth = (coinInfo["result"][0]["Last"] - value[1]) * value[0]
+            netWorthUSDT = btcPrice * netWorth
+            if netWorth > 0:
+                netWorth = "\033[32m   " + str(netWorth) + "\033[0m"
+            else:
+                netWorth = "\033[31m   " + str(netWorth) + "\033[0m"
+            table_content.append([key, coinInfo["result"][0]["Last"], value[0], value[1], netWorth, netWorthUSDT, coinInfo["result"][0]["High"], coinInfo["result"][0]["Low"]])
     return table_content
 
 def main():
     bittrexApi = auth_bittrex()
     while True:
         table_content = parseWallet_json(bittrexApi)
-        print("\033[H\033[J")
-        print tabulate(table_content, header, floatfmt=".8f", tablefmt="fancy_grid")
-        #time.sleep(2)
+        print("\033[H\033[J") # print a top left
+        print tabulate(table_content, header, floatfmt=".12f", tablefmt="fancy_grid")
 
 if __name__ == '__main__':
     main()
