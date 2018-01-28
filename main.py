@@ -8,13 +8,12 @@ import types
 import os
 import time
 import sys
-import datetime
+from time import gmtime, strftime
 
 reload(sys)
 sys.setdefaultencoding('utf8')
-
 bittrex_api_version = API_V1_1
-header = ["Coin Name", "Bid", "Coin Owned", "Buyed price", "Total (BTC)", "Total (USDT)", "24h High", "24h Low"]
+header = ["Coin Name", "BTC Price", "USDT Price", "Coin Owned", "Buyed price", "Total (BTC)", "Total (USDT)", "24h High", "24h Low"]
 
 def auth_bittrex():
     dataBittrex = json.load(open('key.json'))
@@ -26,43 +25,45 @@ def getCoinsInfo(bittrexApi):
     return marketSummaries
 
 def getCoinInfo(coin, marketSummaries):
-    #print "marketSummaries = " + marketSummaries["result"][0]["MarketName"]
     for market in marketSummaries["result"]:
         if (market["MarketName"] == "BTC-" + coin):
             return market
     return None
 
-
-def parseWallet_json(bittrexApi):
+def fillTable(bittrexApi):
     table_content = []
     dataWallet = json.load(open('wallet.json'))
     coinsInfo = getCoinsInfo(bittrexApi)
-    #print json.dumps(coinsInfo, indent = 2)
+    #print json.dumps(coinsInfo, indent=2)
+    totalInBtc = 0
+    totalInUSDT = 0
     for key, value in dataWallet.iteritems():
-        if isinstance(value[0], types.FloatType):
+        if isinstance(value[0], types.FloatType) or isinstance(value[0], types.IntType):
             coinInfo = getCoinInfo(key, coinsInfo)
             if coinInfo != None:
-                totalBtc = coinInfo["Bid"] * value[0]
                 btcPrice = bittrexApi.get_marketsummary("USDT-BTC")["result"][0]["Bid"]
-                netWorthUSDT = btcPrice * totalBtc
-                if totalBtc > 0:
-                    totalBtc = "\033[32m ⬆  " + str(totalBtc) + "\033[0m"
+                totalCoinInBtc = (value[0] * coinInfo["Bid"])
+                totalUSDT = btcPrice * totalCoinInBtc
+                totalInBtc += totalCoinInBtc
+                totalInUSDT += totalUSDT
+                if value[1] < coinInfo["Bid"]:
+                    totalUSDT = "\033[32m ⬆ " + str(totalUSDT) + "\033[0m"
+                    totalCoinInBtc = "\033[32m ⬆ " + str(totalCoinInBtc) + "\033[0m"
                 else:
-                    totalBtc = "\033[31m ⬇  " + str(totalBtc) + "\033[0m"
-                table_content.append(["\033[35m" + key + "\033[0m", coinInfo["Bid"], value[0], value[1], totalBtc, netWorthUSDT, coinInfo["High"], coinInfo["Low"]])
-                #print "Info for " + key + " Receveid"
-    return table_content
+                    totalUSDT = "\033[31m ⬇ " + str(totalUSDT) + "\033[0m"
+                    totalCoinInBtc = "\033[31m ⬇ " + str(totalCoinInBtc) + "\033[0m"
+                table_content.append([key, coinInfo["Bid"], coinInfo["Bid"] * btcPrice, value[0], value[1], totalCoinInBtc, totalUSDT, coinInfo["High"], coinInfo["Low"]])
+    return table_content, totalInBtc, totalInUSDT
 
 def main():
     bittrexApi = auth_bittrex()
-    #i = 0
     while True:
-        table_content = parseWallet_json(bittrexApi)
+        table_content, totalBtc, totalUsdt = fillTable(bittrexApi)
         print("\033[H\033[J") # print at top left
         print tabulate(table_content, header, floatfmt=".8f", tablefmt="fancy_grid")
-        print "Last refresh : " + str(datetime.datetime.now())
-        #print i
-        #i += 1
+        print "\033[34mTotal in BTC = \033[33m" + str(totalBtc)
+        print "\033[34mTotal in USDT = \033[33m" + str(totalUsdt) + "\033[0m"
+        print "Last refresh : " + strftime("%Y-%m-%d %H:%M:%S", gmtime())
 
 if __name__ == '__main__':
     main()
