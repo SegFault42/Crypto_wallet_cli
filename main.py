@@ -13,7 +13,20 @@ from time import gmtime, strftime
 reload(sys)
 sys.setdefaultencoding('utf8')
 bittrex_api_version = API_V1_1
-header = ["Coin Name", "BTC Price", "USDT Price", "Coin Owned", "Buyed price", "Total (BTC)", "Total (USDT)", "24h High", "24h Low"]
+
+cyan = "\033[36m"
+end = "\033[0m"
+
+header = [cyan + "Coin Name" + end,
+            cyan + "BTC Price" + end,
+            cyan + "USDT Price" + end,
+            cyan + "Coin Owned" + end,
+            cyan + "Buyed price" + end,
+            cyan + "Total (BTC)" + end,
+            cyan + "Total (USDT)" + end
+            , cyan + "24h High" + end ,
+            cyan + "24h Low" + end]
+
 totalBtcCmp = 0
 
 def auth_bittrex():
@@ -36,11 +49,17 @@ def fillTable(bittrexApi):
     table_content = []
     dataWallet = json.load(open('wallet.json'))
     coinsInfo = getCoinsInfo(bittrexApi)
+    if coinsInfo == None:
+        return None, None, None
     totalInBtc = 0
     totalInUSDT = 0
     for key, value in dataWallet.iteritems():
         if isinstance(value[0], types.FloatType) or isinstance(value[0], types.IntType):
-            coinInfo = getCoinInfo(key, coinsInfo)
+            if coinsInfo != None:
+                try:
+                    coinInfo = getCoinInfo(key, coinsInfo)
+                except:
+                    continue
             if coinInfo != None:
                 try:
                     btcPrice = bittrexApi.get_marketsummary("USDT-BTC")["result"][0]["Bid"]
@@ -69,19 +88,10 @@ def main():
     while True:
         table_content, totalBtc, totalUsdt = fillTable(bittrexApi)
         print("\033[H\033[J") # print at top left
-        print tabulate(table_content, header, floatfmt=".8f", tablefmt="fancy_grid")
-        #if totalBtcCmp > totalBtc:
-            #print "\033[34mTotal in BTC = \033[31m ⬇ " + str(totalBtc)
-            #print "\033[34mTotal in USDT = \033[31m ⬇ " + str(totalUsdt) + "\033[0m"
-        #elif totalBtcCmp < totalBtc:
-            #print "\033[34mTotal in BTC = \033[32m ⬆ " + str(totalBtc)
-            #print "\033[34mTotal in USDT = \033[32m ⬆ " + str(totalUsdt) + "\033[0m"
-        #else:
-            #print "\033[34mTotal in BTC = " + str(totalBtc)
-            #print "\033[34mTotal in USDT = " + str(totalUsdt) + "\033[0m"
-        #totalBtcCmp = totalBtc
-        #print "\033[34mTotal in BTC = \033[33m" + str(totalBtc)
-        #print "\033[34mTotal in USDT = \033[33m" + str(totalUsdt) + "\033[0m"
+        if (table_content == None):
+            print "\033[31mFailed to retrieve data ! Retrying ...\033[0m"
+        else:
+            print tabulate(table_content, header, floatfmt=".8f", tablefmt="fancy_grid")
         print "Last refresh : " + strftime("%Y-%m-%d %H:%M:%S", gmtime())
 
 if __name__ == '__main__':
