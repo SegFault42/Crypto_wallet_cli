@@ -14,7 +14,10 @@ reload(sys)
 sys.setdefaultencoding('utf8')
 bittrex_api_version = API_V1_1
 
+red = "\033[31m"
+green = "\033[32m"
 cyan = "\033[36m"
+white = "\033[97m"
 end = "\033[0m"
 
 header = [cyan + "Coin Name" + end,
@@ -23,11 +26,9 @@ header = [cyan + "Coin Name" + end,
             cyan + "Coin Owned" + end,
             cyan + "Buyed price" + end,
             cyan + "Total (BTC)" + end,
-            cyan + "Total (USDT)" + end
-            , cyan + "24h High" + end ,
+            cyan + "Total (USDT)" + end,
+            cyan + "24h High" + end,
             cyan + "24h Low" + end]
-
-totalBtcCmp = 0
 
 def auth_bittrex():
     dataBittrex = json.load(open('key.json'))
@@ -44,54 +45,78 @@ def getCoinInfo(coin, marketSummaries):
             return market
     return None
 
-def fillTable(bittrexApi):
+def fillTable(bittrexApi, dataWallet):
     global totalBtcCmp
     table_content = []
-    dataWallet = json.load(open('wallet.json'))
-    coinsInfo = getCoinsInfo(bittrexApi)
-    if coinsInfo == None:
-        return None, None, None
     totalInBtc = 0
     totalInUSDT = 0
+    btcPrice = bittrexApi.get_market_summary("USDT-BTC")["result"][0]["Bid"]
+    marketSummaries = getCoinsInfo(bittrexApi) # marketSummaries get all coins information
+    if marketSummaries == None:
+        return None, None, None
     for key, value in dataWallet.iteritems():
         if isinstance(value[0], types.FloatType) or isinstance(value[0], types.IntType):
-            if coinsInfo != None:
-                try:
-                    coinInfo = getCoinInfo(key, coinsInfo)
-                except:
-                    continue
+            try:
+                coinInfo = getCoinInfo(key, marketSummaries) # coinInfo get specific coin information 
+            except:
+                continue
             if coinInfo != None:
-                try:
-                    btcPrice = bittrexApi.get_marketsummary("USDT-BTC")["result"][0]["Bid"]
-                except:
-                    continue
                 totalCoinInBtc = (value[0] * coinInfo["Bid"])
                 totalUSDT = btcPrice * totalCoinInBtc
                 totalInBtc += totalCoinInBtc
                 totalInUSDT += totalUSDT
-                if value[1] < coinInfo["Bid"]:
-                    totalUSDT = "\033[32m ⬆ " + str(totalUSDT) + "\033[0m"
-                    totalCoinInBtc = "\033[32m ⬆ " + str(totalCoinInBtc) + "\033[0m"
+                if value[1] == 0:
+                    totalUSDT = ""
+                    totalCoinInBtc = ""
+                elif value[1] < coinInfo["Bid"]:
+                    totalUSDT = totalUSDT
+                    totalCoinInBtc = totalCoinInBtc
                 else:
-                    totalUSDT = "\033[31m ⬇ " + str(totalUSDT) + "\033[0m"
-                    totalCoinInBtc = "\033[31m ⬇ " + str(totalCoinInBtc) + "\033[0m"
+                    totalUSDT = totalUSDT
+                    totalCoinInBtc = totalCoinInBtc
                 table_content.append([key, coinInfo["Bid"], coinInfo["Bid"] * btcPrice, value[0], value[1], totalCoinInBtc, totalUSDT, coinInfo["High"], coinInfo["Low"]])
-    if totalBtcCmp > totalInBtc:
-        table_content.append(["Total", None, None, None, None, "\033[31m ⬇ " + str(totalInBtc) + "\033[0m", "\033[31m ⬇ " + str(totalInUSDT) + "\033[0m", None, None])
-    elif totalBtcCmp <= totalInBtc:
-        table_content.append(["Total", None, None, None, None, "\033[32m ⬆ " + str(totalInBtc) + "\033[0m", "\033[32m ⬆ " + str(totalInUSDT) + "\033[0m", None, None])
-    totalBtcCmp = totalInBtc
-    return table_content, totalInBtc, totalInUSDT
+    table_content.append(["Total", None, None, None, None, totalInBtc, totalInUSDT, None, None])
+    return table_content
+
+def coloriseTable(tableContent, oldTableContent):
+    i = 0
+    #print "tableContent: "
+    #print tableContent
+    #print "oldTableContent: "
+    #print oldTableContent
+
+    while i < len(tableContent):
+        j = 1
+        while j < len(tableContent[i]):
+            if tableContent[i][j] == 0 or tableContent[i][j] == None:
+                tableContent[i][j] = ""
+            elif tableContent[i][j] < oldTableContent[i][j]:
+                tableContent[i][j] = red + str(tableContent[i][j]) + end
+            elif tableContent[i][j] > oldTableContent[i][j]:
+                tableContent[i][j] = green + str(tableContent[i][j]) + end
+            else:
+                tableContent[i][j] = white + str(tableContent[i][j]) + end
+            j = j + 1
+        i = i + 1
+    print tabulate(tableContent, header, floatfmt=".8f", tablefmt="fancy_grid")
 
 def main():
+    dataWallet = json.load(open('wallet.json')) # get all info in wallet.json
     bittrexApi = auth_bittrex()
+    condition = 0
     while True:
-        table_content, totalBtc, totalUsdt = fillTable(bittrexApi)
-        print("\033[H\033[J") # print at top left
-        if (table_content == None):
+        tableContent = fillTable(bittrexApi, dataWallet)
+        #print("\033[H\033[J") # print at top left
+        if (tableContent == None):
             print "\033[31mFailed to retrieve data ! Retrying ...\033[0m"
         else:
-            print tabulate(table_content, header, floatfmt=".8f", tablefmt="fancy_grid")
+            if condition == 0:
+                print tabulate(tableContent, header, floatfmt=".8f", tablefmt="fancy_grid")
+            else:
+                coloriseTable(tableContent, oldTableContent)
+        oldTableContent = tableContent
+        print oldTableContent
+        condition = 1
         print "Last refresh : " + strftime("%Y-%m-%d %H:%M:%S", gmtime())
 
 if __name__ == '__main__':
