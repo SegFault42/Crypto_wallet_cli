@@ -78,12 +78,9 @@ def fillTable(bittrexApi, dataWallet):
     table_content.append(["Total", None, None, None, None, totalInBtc, totalInUSDT, None, None])
     return table_content
 
-def coloriseTable(tableContent, oldTableContent):
+def coloriseTable(tmp, oldTableContent):
     i = 0
-    #print "tableContent: "
-    #print tableContent
-    #print "oldTableContent: "
-    #print oldTableContent
+    tableContent = list(tmp)
 
     while i < len(tableContent):
         j = 1
@@ -103,20 +100,23 @@ def coloriseTable(tableContent, oldTableContent):
 def main():
     dataWallet = json.load(open('wallet.json')) # get all info in wallet.json
     bittrexApi = auth_bittrex()
-    condition = 0
+    oldTableContent = None
+    tableContent = None
+
     while True:
         tableContent = fillTable(bittrexApi, dataWallet)
         #print("\033[H\033[J") # print at top left
         if (tableContent == None):
             print "\033[31mFailed to retrieve data ! Retrying ...\033[0m"
         else:
-            if condition == 0:
+            if (oldTableContent == None):
                 print tabulate(tableContent, header, floatfmt=".8f", tablefmt="fancy_grid")
             else:
                 coloriseTable(tableContent, oldTableContent)
-        oldTableContent = tableContent
+        print tableContent
+        print ""
         print oldTableContent
-        condition = 1
+        oldTableContent = list(tableContent)
         print "Last refresh : " + strftime("%Y-%m-%d %H:%M:%S", gmtime())
 
 if __name__ == '__main__':
