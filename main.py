@@ -78,24 +78,24 @@ def fillTable(bittrexApi, dataWallet):
     table_content.append(["Total", None, None, None, None, totalInBtc, totalInUSDT, None, None])
     return table_content
 
-def coloriseTable(tmp, oldTableContent):
+def coloriseTable(tableContent, oldTableContent):
     i = 0
-    tableContent = list(tmp)
+    tableContentCopy = [x[:] for x in tableContent]
 
-    while i < len(tableContent):
+    while i < len(tableContentCopy):
         j = 1
-        while j < len(tableContent[i]):
-            if tableContent[i][j] == 0 or tableContent[i][j] == None:
-                tableContent[i][j] = ""
-            elif tableContent[i][j] < oldTableContent[i][j]:
-                tableContent[i][j] = red + str(tableContent[i][j]) + end
-            elif tableContent[i][j] > oldTableContent[i][j]:
-                tableContent[i][j] = green + str(tableContent[i][j]) + end
+        while j < len(tableContentCopy[i]):
+            if tableContentCopy[i][j] == 0 or tableContentCopy[i][j] == None:
+                tableContentCopy[i][j] = ""
+            elif tableContentCopy[i][j] < oldTableContent[i][j]:
+                tableContentCopy[i][j] = red + str(tableContentCopy[i][j]) + end
+            elif tableContentCopy[i][j] > oldTableContent[i][j]:
+                tableContentCopy[i][j] = green + str(tableContentCopy[i][j]) + end
             else:
-                tableContent[i][j] = white + str(tableContent[i][j]) + end
+                tableContentCopy[i][j] = white + str(tableContentCopy[i][j]) + end
             j = j + 1
         i = i + 1
-    print tabulate(tableContent, header, floatfmt=".8f", tablefmt="fancy_grid")
+        print tabulate(tableContentCopy, header, floatfmt=".8f", tablefmt="fancy_grid")
 
 def main():
     dataWallet = json.load(open('wallet.json')) # get all info in wallet.json
@@ -113,10 +113,7 @@ def main():
                 print tabulate(tableContent, header, floatfmt=".8f", tablefmt="fancy_grid")
             else:
                 coloriseTable(tableContent, oldTableContent)
-        print tableContent
-        print ""
-        print oldTableContent
-        oldTableContent = list(tableContent)
+        oldTableContent = tableContent[:]
         print "Last refresh : " + strftime("%Y-%m-%d %H:%M:%S", gmtime())
 
 if __name__ == '__main__':
