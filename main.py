@@ -80,7 +80,6 @@ def fillTable(bittrexApi, dataWallet):
 
 def coloriseTable(tableContent, oldTableContent):
     i = 0
-    #tableContentCopy = [x[:] for x in tableContent]
 
     if (oldTableContent != None):
         while i < len(tableContent):
@@ -91,15 +90,17 @@ def coloriseTable(tableContent, oldTableContent):
                     value1 = float(value1)
                 if tableContent[i][j] == 0 or tableContent[i][j] == None:
                     tableContent[i][j] = ""
+                elif (j == 3 or j == 4):
+                    tableContent[i][j] = white + "%.8f" % tableContent[i][j] + end
                 elif tableContent[i][j] < value1:
-                    tableContent[i][j] = red + str(tableContent[i][j]) + end
+                    tableContent[i][j] = red + "%.8f" % tableContent[i][j] + end
                 elif tableContent[i][j] > value1:
-                    tableContent[i][j] = green + str(tableContent[i][j]) + end
+                    tableContent[i][j] = green + "%.8f" % tableContent[i][j] + end
                 else:
                     tableContent[i][j] = oldTableContent[i][j]
                 j = j + 1
             i = i + 1
-    print tabulate(tableContent, header, floatfmt=".16f", tablefmt="fancy_grid")
+    print tabulate(tableContent, header, floatfmt=".2f", tablefmt="fancy_grid")
 
 def main():
     dataWallet = json.load(open('wallet.json')) # get all info in wallet.json
