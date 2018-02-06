@@ -80,22 +80,26 @@ def fillTable(bittrexApi, dataWallet):
 
 def coloriseTable(tableContent, oldTableContent):
     i = 0
-    tableContentCopy = [x[:] for x in tableContent]
+    #tableContentCopy = [x[:] for x in tableContent]
 
-    while i < len(tableContentCopy):
-        j = 1
-        while j < len(tableContentCopy[i]):
-            if tableContentCopy[i][j] == 0 or tableContentCopy[i][j] == None:
-                tableContentCopy[i][j] = ""
-            elif tableContentCopy[i][j] < oldTableContent[i][j]:
-                tableContentCopy[i][j] = red + str(tableContentCopy[i][j]) + end
-            elif tableContentCopy[i][j] > oldTableContent[i][j]:
-                tableContentCopy[i][j] = green + str(tableContentCopy[i][j]) + end
-            else:
-                tableContentCopy[i][j] = white + str(tableContentCopy[i][j]) + end
-            j = j + 1
-        i = i + 1
-        print tabulate(tableContentCopy, header, floatfmt=".8f", tablefmt="fancy_grid")
+    if (oldTableContent != None):
+        while i < len(tableContent):
+            j = 1
+            while j < len(tableContent[i]):
+                value1 = str(oldTableContent[i][j])[5:-4]
+                if (value1):
+                    value1 = float(value1)
+                if tableContent[i][j] == 0 or tableContent[i][j] == None:
+                    tableContent[i][j] = ""
+                elif tableContent[i][j] < value1:
+                    tableContent[i][j] = red + str(tableContent[i][j]) + end
+                elif tableContent[i][j] > value1:
+                    tableContent[i][j] = green + str(tableContent[i][j]) + end
+                else:
+                    tableContent[i][j] = oldTableContent[i][j]
+                j = j + 1
+            i = i + 1
+    print tabulate(tableContent, header, floatfmt=".16f", tablefmt="fancy_grid")
 
 def main():
     dataWallet = json.load(open('wallet.json')) # get all info in wallet.json
@@ -105,7 +109,7 @@ def main():
 
     while True:
         tableContent = fillTable(bittrexApi, dataWallet)
-        #print("\033[H\033[J") # print at top left
+        print("\033[H\033[J") # print at top left
         if (tableContent == None):
             print "\033[31mFailed to retrieve data ! Retrying ...\033[0m"
         else:
