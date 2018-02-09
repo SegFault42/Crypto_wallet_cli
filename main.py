@@ -9,6 +9,7 @@ import os
 import time
 import sys
 from time import gmtime, strftime
+from currency_converter import CurrencyConverter
 
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -27,6 +28,7 @@ header = [cyan + "Coin Name" + end,
             cyan + "Buyed price" + end,
             cyan + "Total (BTC)" + end,
             cyan + "Total (USDT)" + end,
+            cyan + "Total (EUR)" + end,
             cyan + "24h High" + end,
             cyan + "24h Low" + end]
 
@@ -50,10 +52,13 @@ def fillTable(bittrexApi, dataWallet):
     table_content = []
     totalInBtc = 0
     totalInUSDT = 0
-    btcPrice = bittrexApi.get_market_summary("USDT-BTC")["result"][0]["Bid"]
+    try:
+        btcPrice = bittrexApi.get_market_summary("USDT-BTC")["result"][0]["Bid"]
+    except:
+        return None
     marketSummaries = getCoinsInfo(bittrexApi) # marketSummaries get all coins information
     if marketSummaries == None:
-        return None, None, None
+        return None
     for key, value in dataWallet.iteritems():
         if isinstance(value[0], types.FloatType) or isinstance(value[0], types.IntType):
             try:
@@ -74,8 +79,11 @@ def fillTable(bittrexApi, dataWallet):
                 else:
                     totalUSDT = totalUSDT
                     totalCoinInBtc = totalCoinInBtc
-                table_content.append([key, coinInfo["Bid"], coinInfo["Bid"] * btcPrice, value[0], value[1], totalCoinInBtc, totalUSDT, coinInfo["High"], coinInfo["Low"]])
-    table_content.append(["Total", None, None, None, None, totalInBtc, totalInUSDT, None, None])
+                c = CurrencyConverter()
+                totalEUR = c.convert(totalUSDT, 'USD', 'EUR')
+                table_content.append([key, coinInfo["Bid"], coinInfo["Bid"] * btcPrice, value[0], value[1], totalCoinInBtc, totalUSDT, totalEUR, coinInfo["High"], coinInfo["Low"]])
+    totalInEUR = c.convert(totalInUSDT, 'USD', 'EUR')
+    table_content.append(["Total", None, None, None, None, totalInBtc, totalInUSDT, totalInEUR, None, None])
     return table_content
 
 def coloriseTable(tableContent, oldTableContent):
@@ -85,22 +93,23 @@ def coloriseTable(tableContent, oldTableContent):
         while i < len(tableContent):
             j = 1
             while j < len(tableContent[i]):
-                value1 = str(oldTableContent[i][j])[5:-4]
-                if (value1):
-                    value1 = float(value1)
+                #print "floatvalue = " + str(oldTableContent[i][j])
+                floatvalue = str(oldTableContent[i][j])[5:-4]
+                if (floatvalue):
+                    floatvalue = float(floatvalue)
                 if tableContent[i][j] == 0 or tableContent[i][j] == None:
                     tableContent[i][j] = ""
                 elif (j == 3 or j == 4):
                     tableContent[i][j] = white + "%.8f" % tableContent[i][j] + end
-                elif tableContent[i][j] < value1:
+                elif tableContent[i][j] < floatvalue:
                     tableContent[i][j] = red + "%.8f" % tableContent[i][j] + end
-                elif tableContent[i][j] > value1:
+                elif tableContent[i][j] > floatvalue:
                     tableContent[i][j] = green + "%.8f" % tableContent[i][j] + end
                 else:
                     tableContent[i][j] = oldTableContent[i][j]
                 j = j + 1
             i = i + 1
-    print tabulate(tableContent, header, floatfmt=".2f", tablefmt="fancy_grid")
+    print tabulate(tableContent, header, tablefmt="fancy_grid")
 
 def main():
     dataWallet = json.load(open('wallet.json')) # get all info in wallet.json
