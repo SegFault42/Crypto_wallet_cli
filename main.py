@@ -52,6 +52,8 @@ def fillTable(bittrexApi, dataWallet):
     table_content = []
     totalInBtc = 0
     totalInUSDT = 0
+    c = CurrencyConverter()
+
     try:
         btcPrice = bittrexApi.get_market_summary("USDT-BTC")["result"][0]["Bid"]
     except:
@@ -79,7 +81,6 @@ def fillTable(bittrexApi, dataWallet):
                 else:
                     totalUSDT = totalUSDT
                     totalCoinInBtc = totalCoinInBtc
-                c = CurrencyConverter()
                 totalEUR = c.convert(totalUSDT, 'USD', 'EUR')
                 table_content.append([key, coinInfo["Bid"], coinInfo["Bid"] * btcPrice, value[0], value[1], totalCoinInBtc, totalUSDT, totalEUR, coinInfo["High"], coinInfo["Low"]])
     totalInEUR = c.convert(totalInUSDT, 'USD', 'EUR')
@@ -127,7 +128,7 @@ def main():
                 print tabulate(tableContent, header, floatfmt=".8f", tablefmt="fancy_grid")
             else:
                 coloriseTable(tableContent, oldTableContent)
-        oldTableContent = tableContent[:]
+            oldTableContent = tableContent[:]
         print "Last refresh : " + strftime("%Y-%m-%d %H:%M:%S", gmtime())
 
 if __name__ == '__main__':
