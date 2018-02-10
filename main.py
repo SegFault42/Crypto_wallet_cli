@@ -10,6 +10,7 @@ import time
 import sys
 from time import gmtime, strftime
 from currency_converter import CurrencyConverter
+import re
 
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -95,9 +96,16 @@ def coloriseTable(tableContent, oldTableContent):
             j = 1
             while j < len(tableContent[i]):
                 #print "floatvalue = " + str(oldTableContent[i][j])
+                #regex = re.match(r'[-+]?([0-9]*\.[0-9]+|[0-9]+)', str(oldTableContent[i][j]))
                 floatvalue = str(oldTableContent[i][j])[5:-4]
+                #print regex.group(1)
+                #print floatvalue
                 if (floatvalue):
+                    #floatvalue = float(floatvalue.group(1))
                     floatvalue = float(floatvalue)
+                #if (floatvalue != None):
+                    #floatvalue = float(floatvalue.group(1))
+                    #print floatvalue
                 if tableContent[i][j] == 0 or tableContent[i][j] == None:
                     tableContent[i][j] = ""
                 elif (j == 3 or j == 4):
@@ -110,7 +118,7 @@ def coloriseTable(tableContent, oldTableContent):
                     tableContent[i][j] = oldTableContent[i][j]
                 j = j + 1
             i = i + 1
-    print tabulate(tableContent, header, tablefmt="fancy_grid")
+    print tabulate(tableContent, header, floatfmt=".8f", tablefmt="fancy_grid")
 
 def main():
     dataWallet = json.load(open('wallet.json')) # get all info in wallet.json
