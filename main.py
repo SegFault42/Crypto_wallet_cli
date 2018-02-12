@@ -1,7 +1,6 @@
 # -*- coding: utf8 -*-
 
 from tabulate import tabulate
-import progressbar
 from bittrex.bittrex import Bittrex, API_V1_1
 import json
 import types
@@ -21,6 +20,8 @@ green = "\033[32m"
 cyan = "\033[36m"
 white = "\033[97m"
 end = "\033[0m"
+
+percent = 0
 
 header = [cyan + "Coin Name" + end,
             cyan + "BTC Price" + end,
@@ -90,30 +91,22 @@ def fillTable(bittrexApi, dataWallet):
 
 def coloriseTable(tableContent, oldTableContent):
     i = 0
-
-    if (oldTableContent != None):
+    if (oldTableContent and tableContent):
         while i < len(tableContent):
             j = 1
             while j < len(tableContent[i]):
-                #print "floatvalue = " + str(oldTableContent[i][j])
-                #regex = re.match(r'[-+]?([0-9]*\.[0-9]+|[0-9]+)', str(oldTableContent[i][j]))
-                floatvalue = str(oldTableContent[i][j])[5:-4]
-                #print regex.group(1)
-                #print floatvalue
-                if (floatvalue):
-                    #floatvalue = float(floatvalue.group(1))
-                    floatvalue = float(floatvalue)
-                #if (floatvalue != None):
-                    #floatvalue = float(floatvalue.group(1))
-                    #print floatvalue
-                if tableContent[i][j] == 0 or tableContent[i][j] == None:
-                    tableContent[i][j] = ""
-                elif (j == 3 or j == 4):
-                    tableContent[i][j] = white + "%.8f" % tableContent[i][j] + end
-                elif tableContent[i][j] < floatvalue:
-                    tableContent[i][j] = red + "%.8f" % tableContent[i][j] + end
-                elif tableContent[i][j] > floatvalue:
-                    tableContent[i][j] = green + "%.8f" % tableContent[i][j] + end
+                regex = re.findall(r'[-+]?([0-9]*\.[0-9]+)', str(oldTableContent[i][j]))
+                if (len(regex)):
+                    print regex[0]
+                    print tableContent[i][j]
+                    if (float(regex[0]) > float(tableContent[i][j])):
+                        print "UP"
+                        tableContent[i][j] = green + str(regex[0]) + end
+                    elif (float(regex[0]) < float(tableContent[i][j])):
+                        print "DOWN"
+                        tableContent[i][j] = red + str(regex[0]) + end
+                    else:
+                        tableContent[i][j] = oldTableContent[i][j]
                 else:
                     tableContent[i][j] = oldTableContent[i][j]
                 j = j + 1
@@ -127,7 +120,11 @@ def main():
     tableContent = None
 
     while True:
+        percent = 0;
+        print "\r" + str(percent) + "%"
         tableContent = fillTable(bittrexApi, dataWallet)
+        percent = 10;
+        print "\r" + str(percent) + "%"
         print("\033[H\033[J") # print at top left
         if (tableContent == None):
             print "\033[31mFailed to retrieve data ! Retrying ...\033[0m"
