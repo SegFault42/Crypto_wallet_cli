@@ -97,14 +97,13 @@ def coloriseTable(tableContent, oldTableContent):
             while j < len(tableContent[i]):
                 regex = re.findall(r'[-+]?([0-9]*\.[0-9]+)', str(oldTableContent[i][j]))
                 if (len(regex)):
-                    print regex[0]
-                    print tableContent[i][j]
-                    if (float(regex[0]) > float(tableContent[i][j])):
-                        print "UP"
-                        tableContent[i][j] = green + str(regex[0]) + end
-                    elif (float(regex[0]) < float(tableContent[i][j])):
-                        print "DOWN"
-                        tableContent[i][j] = red + str(regex[0]) + end
+                    if (tableContent[i][j]):
+                        if (float(regex[0]) > float(tableContent[i][j])):
+                            tableContent[i][j] = green + str(tableContent[i][j]) + end
+                        elif (float(regex[0]) < float(tableContent[i][j])):
+                            tableContent[i][j] = red + str(tableContent[i][j]) + end
+                        else:
+                            tableContent[i][j] = oldTableContent[i][j]
                     else:
                         tableContent[i][j] = oldTableContent[i][j]
                 else:
@@ -120,11 +119,7 @@ def main():
     tableContent = None
 
     while True:
-        percent = 0;
-        print "\r" + str(percent) + "%"
         tableContent = fillTable(bittrexApi, dataWallet)
-        percent = 10;
-        print "\r" + str(percent) + "%"
         print("\033[H\033[J") # print at top left
         if (tableContent == None):
             print "\033[31mFailed to retrieve data ! Retrying ...\033[0m"
