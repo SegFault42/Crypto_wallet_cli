@@ -98,9 +98,9 @@ def coloriseTable(tableContent, oldTableContent):
                 regex = re.findall(r'[-+]?([0-9]*\.[0-9]+)', str(oldTableContent[i][j]))
                 if (len(regex)):
                     if (tableContent[i][j]):
-                        if (float(regex[0]) > float(tableContent[i][j])):
+                        if (float(tableContent[i][j]) > float(regex[0])):
                             tableContent[i][j] = green + str(tableContent[i][j]) + end
-                        elif (float(regex[0]) < float(tableContent[i][j])):
+                        elif (float(tableContent[i][j]) < float(regex[0])):
                             tableContent[i][j] = red + str(tableContent[i][j]) + end
                         else:
                             tableContent[i][j] = oldTableContent[i][j]
